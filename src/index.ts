@@ -26,6 +26,8 @@ export interface Env {
 	//
 	// Example binding to a Queue. Learn more at https://developers.cloudflare.com/queues/javascript-apis/
 	// MY_QUEUE: Queue;
+
+	CORS_ORIGIN: string;
 }
 
 type ParseResult = ParseSuccess | ParseFailure;
@@ -107,6 +109,15 @@ async function createRoom(request: Request, env: Env) {
 }
 
 async function handleApiRequest(path: string[], request: Request, env: Env) {
+	const headers = env.CORS_ORIGIN
+		? {
+				"Access-Control-Allow-Origin": env.CORS_ORIGIN,
+				"Access-Control-Allow-Methods": request.method,
+				"Access-Control-Allow-Credentials": "true",
+				Vary: "Origin",
+		  }
+		: undefined;
+
 	if (path[0] === "room") {
 		if (path.length === 1) {
 			if (request.method === "POST") {
@@ -117,7 +128,10 @@ async function handleApiRequest(path: string[], request: Request, env: Env) {
 					result: false,
 					message: "Method not allowed",
 				}),
-				{ status: 405 },
+				{
+					status: 405,
+					headers,
+				},
 			);
 		}
 
@@ -129,7 +143,7 @@ async function handleApiRequest(path: string[], request: Request, env: Env) {
 						result: false,
 						message: "Invalid room id",
 					}),
-					{ status: 400 },
+					{ status: 400, headers },
 				);
 			}
 
@@ -145,7 +159,7 @@ async function handleApiRequest(path: string[], request: Request, env: Env) {
 			result: false,
 			message: "Not found",
 		}),
-		{ status: 404 },
+		{ status: 404, headers },
 	);
 }
 
